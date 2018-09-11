@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<script src="http://d3js.org/d3.v3.min.js"></script>
+	<style>
+		.bar {
+			fill: steelblue;
+		}
+
+		.bar:hover {
+			fill: brown;
+		}
+	
+	</style>
+	<script>
+		function draw(){
+			var margin = 75,
+            width = 1400 - margin,
+            height = 600 - margin;
+			
+			d3.select("body")
+			.append("h2")
+			.text("Loans");
+			
+			var svg = d3.select("body")
+            .append("svg")
+            .attr("width", width + margin)
+            .attr("height", height + margin)
+            .append('g')
+            .attr('class', 'boxchart');
+			
+			var years = [];
+			for(var i = 2007; i < 2013; i++){
+				years.push(i)
+			}
+			
+			
+			
+			
+		}
+	</script>
+</head>
+<body>
+
+
+	<script type="text/javascript">
+  /*
+    BorrowerRate, LoanOriginalAmount, LoanOriginationDate
+    */
+    
+		d3.csv("/Data/prosperLoanData", draw);
+	</script>
+
+</body>
+</html>
