@@ -11,34 +11,50 @@
 		.bar:hover {
 			fill: brown;
 		}
+		.header {
+			text-align: center;
+		}
 	
 	</style>
-	<script>
-		function draw(){
+	<script type="text/javascript">
+		function draw(data){
 			var margin = 75,
             width = 1400 - margin,
             height = 600 - margin;
 			
 			d3.select("body")
 			.append("h2")
-			.text("Loans");
+			.text("Loans")
+			.attr('class', 'header');
+			
+			
+			
+			debugger;
 			
 			var svg = d3.select("body")
             .append("svg")
             .attr("width", width + margin)
             .attr("height", height + margin)
             .append('g')
-            .attr('class', 'boxchart');
+            .attr('class', 'bar');
 			
 			var years = [];
 			for(var i = 2007; i < 2013; i++){
 				years.push(i)
 			}
 			
-			
+			d3.select(svg)
+			  .selectAll("g")
+			  .data(data)
+			  .enter()
+			  .append("g")
+			  .style("width", function(d){ return sum(d['LoanOriginalAmount']);})
+			  .text(function(d){return d['LoanOriginationDate'];});
+			  
 			
 			
 		}
+		
 	</script>
 </head>
 <body>
@@ -48,8 +64,11 @@
   /*
     BorrowerRate, LoanOriginalAmount, LoanOriginationDate
     */
-    
-		d3.csv("/Data/prosperLoanData", draw);
+		var format = d3.time.format("%Y");
+		d3.csv("prosperLoanData.csv", function(d){
+			d['LoanOriginationDate'] = format.parse(d['LoanOriginationDate']);
+			return d;
+		}, draw);
 	</script>
 
 </body>
