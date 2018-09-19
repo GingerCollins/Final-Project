@@ -1,0 +1,3 @@
+bar need to be smaller (change width so there is more spacing)
+increase font size
+bold axis titles
