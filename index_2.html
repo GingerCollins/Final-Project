@@ -31,8 +31,13 @@
 			width: 100px;
 			height: 25px;
 			position: relative;
-			left: 1200px;
+			top: 0px;
+			left: 1300px;
 			
+		}
+		.chartAll {
+			display: block;
+			margin: auto;
 		}
 	
 	</style>
@@ -105,6 +110,7 @@
 			// create svg
 			var svg = d3.select('body')
 				.append('svg')
+				.attr('class', 'chartAll')
 				.attr('width', fullWidth)
 				.attr('height', fullHeight)
 				.append('g')
@@ -300,7 +306,7 @@
 	*/
 		var parseDate = d3.timeParse("%m/%d/%Y %H:%M")
 		
-		d3.csv("prosperLoanData.csv", function(d){
+		d3.csv("Data/prosperLoanData.csv", function(d){
 		d["key"] = parseDate(d["LoanOriginationDate"]);
 		d["year"] = new Date(d['LoanOriginationDate']).getUTCFullYear();
 		d["month"] = new Date(d['LoanOriginationDate']).getUTCMonth();
