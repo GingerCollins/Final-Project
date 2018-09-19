@@ -1,0 +1,3 @@
+Look at YoY instead of MoM to see if there is a trend: there is not a trend and does not hold up to my story
+change Borrower to Interest
+change borrower rate to a line not a bar chart to get a better accuracy.
