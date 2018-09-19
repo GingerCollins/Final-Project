@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<script src="http://d3js.org/d3.v4.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.min.js"></script>
+	
+	<style>
+		.header {
+			text-align:center;
+		}	
+		/* COLORS:	
+			#bd675c
+			#bb9b65
+			#6585bb
+			#9b65bb
+			#65a6bb
+			*/
+		.amount {
+			fill: #85bb65;
+		}
+		.rate {
+			fill: none;
+			stroke: #9b65bb;
+			stroke-width: 3;
+		}
+		.legend {
+			font-size: 12px;
+		}
+		#MyDropDownList {
+			width: 100px;
+			height: 25px;
+			position: relative;
+			left: 1200px;
+			
+		}
+	
+	</style>
+	<script type="text/javascript">
+		function draw(data){
+			
+			var months = [ "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+			
+			var margin = {top: 50, right: 70, bottom: 50, left: 70};
+			
+			var fullWidth = 1400;
+			var fullHeight = 500;
+			
+			var width = fullWidth - margin.right - margin.left;
+			var height = fullHeight - margin.top - margin.bottom;
+			
+			// add header
+			d3.select("body")
+			.append("h2")
+			.text("Loan Avg. Amount vs Avg. Interest Rate")
+			.attr('class', 'header');
+				
+			// change string to numbers
+			data.forEach(function(d) {
+				d.LoanOriginalAmount = +d.LoanOriginalAmount
+				d.BorrowerRate = +d.BorrowerRate
+			});
+			
+			// create year array for dropdown
+			var years = [];
+			
+			data.forEach(function(d) {
+				if(years.includes(d.year) === false){
+					if(2005 < d.year && d.year < 2014){
+						years.push(d.year)
+				}}
+			});
+			years.sort();
+			console.log(years)
+			// drop down so that they can select specific years
+			var dropdown = d3.select('body')
+				.append('select')
+				.attr('id', 'MyDropDownList')
+				.append('option')
+					.text('Select Year');
+			o = 1
+			var dd = document.getElementById('MyDropDownList');
+			years.forEach(function(d) {
+				var option = document.createElement('option');
+				option.text = d;
+				dd.add(option, dd[o]);
+				o += 1;
+			});
+			dd.addEventListener('change', changeEventHandler);
+			
+			// remove data for the first and last year due to lack of data
+			var specific_years = data.filter(function(d){
+					if(2005 < d.year && d.year < 2014){
+						return d.year;}
+					});
+			
+			// nest data per month
+			var nested_data = d3.nest()
+				.key(function(d) { return d.month;}).sortKeys(function(a, b) {return a - b;})
+				.rollup(function(leaves) { return {'amount': d3.mean(leaves, function(d) { return d.LoanOriginalAmount;}), 
+												'rate': d3.mean(leaves, function(d) {return d.BorrowerRate;})}})
+				.entries(specific_years);
+			
+				
+			// create svg
+			var svg = d3.select('body')
+				.append('svg')
+				.attr('width', fullWidth)
+				.attr('height', fullHeight)
+				.append('g')
+				.attr('class', 'chart')
+				.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+			
+			// scales
+			var x0 = d3.scaleBand()
+				.domain(d3.range(nested_data.length))
+				.range([0, width])
+				.padding(0.1);
+				
+			var x1 = d3.scaleBand()
+				.rangeRound([0, width])
+				.padding(0.05)
+				.domain(d3.range(nested_data.length));
+				
+			var y0 = d3.scaleLinear()
+				.domain([0, 12000])
+				.range([height, 0]);
+				
+			var y1 = d3.scaleLinear()
+				.domain([0, .26])
+				.rangeRound([height, 0]);
+						
+			// add rect elements	
+			svg.selectAll('.amount')
+				.data(nested_data)
+				.enter()
+				.append('rect')
+					.attr('class', 'amount')
+					.attr('x', function(d) { return x0(d.key);})
+					.attr('y', function(d) { return y0(d.value.amount);})
+					.attr('width', x0.bandwidth())
+					.attr('height', function(d) { return height - y0(d.value.amount);})
+					.text(function(d) {return d.value.amount;});
+			
+			var line = d3.line()
+				.x(function(d, i) {return x1(d.key) + x1.bandwidth()/2;})
+				.y(function(d) {return y1(d.value.rate);})
+				.curve(d3.curveMonotoneX);
+			
+			svg.append('path')
+					.attr('class', 'rate')
+					.attr('d', line(nested_data));
+			
+			x0.domain(nested_data.map(function(d) {return months[d.key];}));
+			
+			
+			// add x axis
+			svg.append('g')
+				.attr('transform', 'translate(0, ' + height + ')')
+				.call(d3.axisBottom(x0));
+			
+			// add y axis left
+			svg.append('g')
+				.call(d3.axisLeft(y0).tickFormat(d3.format('$,')));
+				
+			svg.append('text')
+				.attr('transform', 'rotate(-90)')
+				.attr('y', 0 - margin.left)
+				.attr('x', 0 - (height / 2))
+				.attr('dy', '1em')
+				.style('text-anchor', 'middle')
+				.text('Average Loan Amount');
+				
+			// add y axis right
+			svg.append('g')
+				.attr('transform', 'translate(' + width + ',0)')
+				.call(d3.axisRight(y1).tickFormat(d3.format('.0%')));
+			svg.append('text')
+				.attr('transform', 'rotate(-90)')
+				.attr('y', width + (margin.right/2))
+				.attr('x', 0 - (height / 2))
+				.attr('dy', '1em')
+				.style('text-anchor', 'middle')
+				.text('Average Interest Rate');
+				
+			// add legend
+			var ordinal = d3.scaleOrdinal()
+				.domain(['Average Loan Amount', 'Average Interest Rate'])
+				.range(["#85bb65", "#9b65bb"])
+			
+			svg.append('g')
+				.attr('class', 'legendOrdinal')
+				.attr('transform', 'translate(30,-40)');
+			
+			var legendOrdinal = d3.legendColor()
+				.shape('path', d3.symbol().type(d3.symbolSquare).size(150)())
+				.shapePadding(2)
+				.cellFilter(function(d) {return d.label !== 'e'})
+				.scale(ordinal)
+			svg.select('.legendOrdinal')
+				.call(legendOrdinal);
+				
+			// update chart with year selection
+			function changeEventHandler(event) {
+				//console.log(event.target.value);
+				// remove Select Year so they can not click on italic
+				if(dd.options[0].text === 'Select Year'){
+					dd.remove(0);
+				};
+				
+				// get year selected
+				selected_year = event.target.value;
+				//console.log(data);
+				
+				// filter data for year
+				var filtered = data.filter(function(d){
+					return d.year == selected_year;
+					});
+				//console.log(filtered);
+					
+				// filtered and nested data
+				var filtered_nested_data = d3.nest()
+				.key(function(d) { return d.month;}).sortKeys(function(a, b) {return a - b;})
+				.rollup(function(leaves) { return {'amount': d3.mean(leaves, function(d) { return d.LoanOriginalAmount;}), 
+												'rate': d3.mean(leaves, function(d) {return d.BorrowerRate;})}})
+				.entries(filtered);
+				//console.log(filtered_nested_data);
+				
+				// update header with year
+				d3.select("h2")
+					.text("Loan Avg. Amount vs Avg. Interest Rate " + selected_year);
+				
+				// select g element to remove and add new rect
+				var chart = d3.selectAll('.chart');					
+					
+				var rect = chart.selectAll('rect')
+                               .data(filtered, function(d){return d.year});
+
+                rect.exit().remove();
+				
+				d3.selectAll('.rate').remove();
+				
+				// change x axis back to number so new rect can get situated
+				x0.domain(nested_data.map(function(d) {return d.key;}));
+				
+				// add amount and rate rects
+				chart.selectAll('.amount')
+					.data(filtered_nested_data)
+					.enter()
+					.append('rect')
+						.attr('class', 'amount')
+						.attr('x', function(d) { return x0(d.key);})
+						.attr('y', function(d) { return y0(d.value.amount);})
+						.attr('width', x0.bandwidth())
+						.attr('height', function(d) { return height - y0(d.value.amount);})
+						.text(function(d) {return d.value.amount;});
+				
+				var line2 = d3.line()
+					.x(function(d, i) {return x1(d.key) + x1.bandwidth()/2;})
+					.y(function(d) {return y1(d.value.rate);})
+					.curve(d3.curveMonotoneX);
+				
+				chart.append('path')
+					.attr('class', 'rate')
+					.attr('d', line2(filtered_nested_data));
+				
+				// update x axis to show months	
+				x0.domain(nested_data.map(function(d) {return months[d.key];}));
+				
+			}
+
+              
+				
+				
+				
+				
+				
+				
+				
+			
+					
+					
+				
+			
+			//var dropdown = document.createElement('select');
+			//var dropdown = document.getElementById('MyDropDownList');
+			
+			
+			// set up chart to change per drop down selection
+			
+		}
+	</script>
+</head>
+<body>
+
+
+	<script type="text/javascript">
+  /*
+    BorrowerRate, LoanOriginalAmount, LoanOriginationDate
+	*/
+		var parseDate = d3.timeParse("%m/%d/%Y %H:%M")
+		
+		d3.csv("prosperLoanData.csv", function(d){
+		d["key"] = parseDate(d["LoanOriginationDate"]);
+		d["year"] = new Date(d['LoanOriginationDate']).getUTCFullYear();
+		d["month"] = new Date(d['LoanOriginationDate']).getUTCMonth();
+		return d;
+		}, draw); 
+	
+	</script>
+
+</body>
+</html>
